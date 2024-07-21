@@ -61,7 +61,7 @@ export default function Product({ params }) {
                     {product?.price 
                       ? <div className="font-bold text-[20px] ml-2">
                           {/* USED TO BE: CAD ${(product?.price / 100).toFixed(2)} */}
-                          4{(product?.price / 100).toFixed(2)}
+                          ${(product?.price / 100).toFixed(2)}
                         </div> 
                     : null }
                   </div>
