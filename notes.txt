@@ -2,6 +2,8 @@ SUPABASE:
     ebay-c
     u5Fq60cqLHBQw1hoKZjvrtCNZfaT3P
 
+NO USPS YET
+
 AUTH:
     https://next-auth.js.org/providers/
     https://supabase.com/docs/guides/auth/auth-helpers/auth-ui
