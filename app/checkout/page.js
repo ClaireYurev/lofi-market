@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import ClientOnly from "../components/ClientOnly";
 import { loadStripe } from '@stripe/stripe-js';
+import { calculateShipping } from "@/app/utils/calculateShipping";
 
 export default function Checkout() {
 
@@ -27,6 +28,7 @@ export default function Checkout() {
 
     const [addressDetails, setAddressDetails] = useState({})
     const [isLoadingAddress, setIsLoadingAddress] = useState(false)
+    const [shippingCost, setShippingCost] = useState(0)
 
     useEffect(() => {
         if (cart?.cartTotal() <= 0) {
@@ -49,15 +51,34 @@ export default function Checkout() {
         }
 
         getAdddress()
+        calculateTotalShipping()
         setTimeout(() => stripeInit(), 300)
     }, [user])
+
+    const calculateTotalShipping = async () => {
+        if (cart.getCart().length > 0) {
+            let totalShipping = 0
+            for (const product of cart.getCart()) {
+                const cost = await calculateShipping(
+                    product.originAddress,
+                    user.zipcode,
+                    product.packageWeight,
+                    product.packageHeight,
+                    product.packageWidth,
+                    product.packageThickness
+                )
+                totalShipping += cost
+            }
+            setShippingCost(totalShipping)
+        }
+    }
 
     const stripeInit = async () => {
         stripe.current = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PK_KEY || '');
     
         const response = await fetch('/api/stripe', {
             method: 'POST',
-            body: JSON.stringify({ amount: cart.cartTotal() })
+            body: JSON.stringify({ amount: cart.cartTotal() + shippingCost })
         })
         const result = await response.json()
 
@@ -110,7 +131,7 @@ export default function Checkout() {
                         city: addressDetails.city,
                         country: addressDetails.country,
                         products: cart.getCart(),
-                        total: cart.cartTotal()
+                        total: cart.cartTotal() + shippingCost
                     })
                 })
                 
@@ -192,7 +213,7 @@ export default function Checkout() {
                                 </div>
                                 <div className="flex items-center justify-between mb-4 text-sm">
                                     <div>Shipping:</div>
-                                    <div>Free</div>
+                                    <div>${(shippingCost / 100).toFixed(2)}</div>
                                 </div>
 
                                 <div className="border-t" />
@@ -200,7 +221,7 @@ export default function Checkout() {
                                 <div className="flex items-center justify-between my-4">
                                     <div className="font-semibold">Order total</div>
                                     <div className="text-2xl font-semibold">
-                                        ${(cart.cartTotal() / 100).toFixed(2)}
+                                        ${((cart.cartTotal() + shippingCost) / 100).toFixed(2)}
                                     </div>
                                 </div>
 

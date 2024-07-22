@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import MainLayout from "../../layouts/MainLayout"
 import SimilarProducts from "../../components/SimilarProducts"
@@ -6,11 +6,15 @@ import { useEffect, useState } from "react"
 import useIsLoading from "../../hooks/useIsLoading"
 import { useCart } from "../../context/cart"
 import { toast } from "react-toastify"
+import { calculateShipping } from "@/app/utils/calculateShipping"
+import { useUser } from "../../context/user"
 
 export default function Product({ params }) {
   const cart = useCart()
+  const { user } = useUser()
 
   const [product, setProduct] = useState({})
+  const [shippingCost, setShippingCost] = useState(null)
 
   const getProduct = async () => {
     useIsLoading(true)
@@ -21,12 +25,31 @@ export default function Product({ params }) {
     setProduct(prod)
     cart.isItemAddedToCart(prod)
     useIsLoading(false)
+  }
 
+  const getShippingCost = async () => {
+    if (user && product.originZipcode) {
+      const cost = await calculateShipping(
+        product.originZipcode,
+        user.zipcode,
+        product.packageWeight,
+        product.packageHeight,
+        product.packageWidth,
+        product.packageLength
+      )
+      setShippingCost(cost)
+    }
   }
 
   useEffect(() => { 
-    getProduct() 
+    getProduct()
   }, [])
+
+  useEffect(() => { 
+    if (product.originZipcode) {
+      getShippingCost()
+    }
+  }, [product, user])
 
   return (
     <>
@@ -60,7 +83,6 @@ export default function Product({ params }) {
                     Price: 
                     {product?.price 
                       ? <div className="font-bold text-[20px] ml-2">
-                          {/* USED TO BE: CAD ${(product?.price / 100).toFixed(2)} */}
                           ${(product?.price / 100).toFixed(2)}
                         </div> 
                     : null }
@@ -91,6 +113,13 @@ export default function Product({ params }) {
                 <div className="font-semibold pb-1">Description:</div>
                 <div className="text-sm">{product?.description}</div>
               </div>
+
+              {shippingCost !== null && (
+                <div className="pt-3">
+                  <div className="font-semibold pb-1">Estimated Shipping Cost:</div>
+                  <div className="text-sm">${shippingCost}</div>
+                </div>
+              )}
 
             </div>
           </div>

@@ -52,4 +52,9 @@ model Products {
   price       Int
   created_at  DateTime?  @default(now()) @db.Timestamptz(6)
   orderItem   OrderItem[]
+  originZipcode    String  @default("92705")
+  packageWidth     Float   @default(8)
+  packageHeight    Float   @default(4)
+  packageLength    Float   @default(12)
+  packageWeight    Float   @default(3.2)
 }
